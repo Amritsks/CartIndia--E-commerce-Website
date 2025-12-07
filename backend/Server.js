@@ -16,11 +16,17 @@ import authRoute from "./routes/authRoute.js";
 dotenv.config();
 
 const app = express();
+// ❗ FIRST Configure Express
 app.use(express.json());
 app.use(cors());
+
+// ❗ FIRST Register ALL API routes (before socket.io)
+app.use("/api/auth", authRoute);
 app.use("/api/orders", orderroute);
 app.use("/api/contact", contactRoute);
-app.use("/api/auth", authRoute);
+app.use("/api/products/upload", cloudinaryroute);
+app.use("/api/products", productroute);
+
 
 
 // Connect MongoDB
@@ -54,8 +60,8 @@ io.on("connection", (socket) => {
 });
 
 // Routes
-app.use("/api/products/upload", cloudinaryroute); // <-- put this first
-app.use("/api/products", productroute);           // <-- then product routes
+// app.use("/api/products/upload", cloudinaryroute); // <-- put this first
+// app.use("/api/products", productroute);           // <-- then product routes
 
 
 // Start Server
