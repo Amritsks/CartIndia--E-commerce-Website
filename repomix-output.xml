@@ -49,6 +49,7 @@ backend/models/orderModel.js
 backend/models/product.js
 backend/models/userModel.js
 backend/package.json
+backend/repomix-output.xml
 backend/routes/authRoute.js
 backend/routes/cloudinaryroute.js
 backend/routes/contactRoute.js
@@ -250,6 +251,615 @@ userSchema.methods.matchPassword = async function(plain) {
 // safe model export pattern
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
+</file>
+
+<file path="backend/repomix-output.xml">
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+cloudinary.js
+middleware/authMiddleware.js
+models/contactModel.js
+models/imagemodel.js
+models/orderModel.js
+models/product.js
+models/userModel.js
+package.json
+routes/authRoute.js
+routes/cloudinaryroute.js
+routes/contactRoute.js
+routes/orderHistoryRoute.js
+routes/orderroute.js
+routes/productroute.js
+Server.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="cloudinary.js">
+import express from "express";
+import multer from "multer";
+// import pakg from "multer-storage-cloudinary"
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+
+import {v2 as cloudinary} from "cloudinary";
+
+// const {cloudinary} = pakg;
+
+const router = express.Router();
+
+// Configuring Storage
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "uploads",
+        allowed_formats:["jpg","png", "jpeg"]
+    },
+});
+
+const upload = multer({storage});
+
+// upload part
+router.post("/upload", upload.single("image"), (req,res) =>
+{
+    try{
+        res.json({
+            success: true,
+            url: req.file.path,
+        });
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).json({success:false, message: "Upload Failed"});
+    }
+});
+
+export default router;
+</file>
+
+<file path="middleware/authMiddleware.js">
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+
+export const protect = async (req, res, next) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith("Bearer ")) return res.status(401).json({ message: "Not authorized" });
+
+    const token = auth.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) return res.status(401).json({ message: "Invalid token" });
+
+    // attach user to req (without password)
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(401).json({ message: "User not found" });
+
+    req.user = user;
+    next();
+  } catch (err) {
+    console.error("Auth middleware error", err);
+    res.status(401).json({ message: "Not authorized" });
+  }
+};
+</file>
+
+<file path="models/contactModel.js">
+import mongoose from "mongoose";
+
+const contactSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    message: { type: String, required: true },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Contact", contactSchema);
+</file>
+
+<file path="models/imagemodel.js">
+import mongoose from "mongoose";
+
+const imageSchema = new mongoose.Schema({
+    url: {type: String, required: true},
+});
+
+export default mongoose.model("Image", imageSchema);
+</file>
+
+<file path="models/orderModel.js">
+import mongoose from "mongoose";
+
+const orderSchema = new mongoose.Schema(
+  {
+    userId: { type: String, required: true },
+
+    items: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        name: String,
+        price: Number,
+        qty: Number,
+        imageUrl: String
+      }
+    ],
+
+    totalAmount: { type: Number, required: true }
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.Order || mongoose.model("Order", orderSchema);
+</file>
+
+<file path="models/product.js">
+import mongoose from "mongoose";
+
+const productSchema = new mongoose.Schema({
+    name: String,
+    price: Number,
+    description: String,
+    customerreview: String,
+    imageUrl:{ type: String, required: true },
+},{
+    timestamps: true
+});
+
+
+const Product = mongoose.model("product", productSchema);
+export default Product;
+</file>
+
+<file path="models/userModel.js">
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true }, // hashed
+  createdAt: { type: Date, default: Date.now }
+});
+
+// hash password when creating/updating
+userSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// method to compare password
+userSchema.methods.matchPassword = async function(plain) {
+  return await bcrypt.compare(plain, this.password);
+};
+
+// safe model export pattern
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+export default User;
+</file>
+
+<file path="package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "Server.js",
+  "scripts": {
+    "start": "node Server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "2.2.1",
+    "socket.io": "^4.8.1",
+    "mongoose": "^8.5.1"
+  }
+}
+</file>
+
+<file path="routes/authRoute.js">
+import express from "express";
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+
+const router = express.Router();
+
+// helper to sign token
+const signToken = (user) => {
+  return jwt.sign(
+    { id: user._id, email: user.email, name: user.name },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
+};
+
+// Signup
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ message: "All fields required" });
+
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ message: "Email already registered" });
+
+    const user = new User({ name, email, password });
+    await user.save();
+
+    const token = signToken(user);
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    console.error("Signup error", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Login
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: "All fields required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+    const match = await user.matchPassword(password);
+    if (!match) return res.status(401).json({ message: "Invalid credentials" });
+
+    const token = signToken(user);
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    console.error("Login error", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+export default router;
+</file>
+
+<file path="routes/cloudinaryroute.js">
+import express from "express";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import Product from "../models/product.js";
+
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post("/", upload.single("image"), async (req, res) => {
+  try {
+    const { name, price, description, customerreview } = req.body;
+
+    if (!req.file) return res.status(400).json({ error: "No image!" });
+
+    const uploaded = await cloudinary.uploader.upload_stream(
+      { folder: "uploads" },
+      async (error, result) => {
+        if (error) return res.status(500).json({ error });
+
+        const product = new Product({
+          name,
+          price,
+          description,
+          customerreview,
+          imageUrl: result.secure_url,
+        });
+        await product.save();
+
+        const io = req.app.get("io");
+        if (io) io.emit("newProduct", product);
+
+        res.json({ success: true, product });
+      }
+    );
+
+    uploaded.end(req.file.buffer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;
+</file>
+
+<file path="routes/contactRoute.js">
+import express from "express";
+import Contact from "../models/contactModel.js";
+
+const router = express.Router();
+
+router.post("/", async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Save to MongoDB
+    const newMessage = new Contact({
+      name,
+      email,
+      message,
+    });
+
+    await newMessage.save();
+
+    res.status(201).json({ message: "Message stored successfully" });
+  } catch (err) {
+    console.error("Contact Save Error:", err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+export default router;
+</file>
+
+<file path="routes/orderHistoryRoute.js">
+import express from "express";
+import Order from "../models/orderModel.js";
+
+const router = express.Router();
+
+// GET /api/orders/:userId
+router.get("/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+
+    return res.json(orders);
+  } catch (error) {
+    console.error("Fetch Orders Error:", error);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+
+export default router;
+</file>
+
+<file path="routes/orderroute.js">
+import express from "express";
+// use the correct model that contains userId and a safe export
+import Order from "../models/orderModel.js";
+
+const router = express.Router();
+
+// Create a new order
+router.post("/", async (req, res) => {
+  try {
+    const { userId, items, totalAmount } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: "Order items are required" });
+    }
+
+    const newOrder = new Order({
+      userId,
+      items,
+      totalAmount,
+    });
+
+    await newOrder.save();
+
+    res.status(201).json({
+      message: "Order saved successfully",
+      order: newOrder,
+    });
+  } catch (err) {
+    console.error("Order Save Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// Fetch Orders of a User
+router.get("/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Order Fetch Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+export default router;
+</file>
+
+<file path="routes/productroute.js">
+import express from "express";
+import Product from "../models/product.js";
+
+const router = express.Router();
+
+//  This will be commented because the same logic allready done in cloudinaryroute.js
+
+// Adding new product
+// router.post("/", async (req, res) => {
+//     try {
+//         const { name, price, description, customerreview, imageUrl } = req.body;
+
+//         if (!imageUrl) {
+//             return res.status(400).json({ error: "imageUrl is required" });
+//         }
+
+//         const product = new Product({
+//             name,
+//             price,
+//             description,
+//             customerreview,
+//             imageUrl,
+//         });
+
+//         const savedProduct = await product.save();
+
+//         // Emit real-time update
+//         const io = req.app.get("io");
+//         if (io) {
+//             io.emit("newProduct", savedProduct);
+//         }
+
+//         res.status(201).json({ message: "Product Saved Successfully", savedProduct });
+//     } catch (error) {
+//         console.log("Product save failed:", error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+
+
+// fetching all product
+router.get("/", async (req, res) => {
+    try {
+        const products = await Product.find().sort({ _id: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+router.get("/:id", async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        res.json(product);
+    } catch (error) {
+        console.error("Error fetching product", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
+
+export default router;
+</file>
+
+<file path="Server.js">
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import { v2 as cloudinary } from "cloudinary";
+import http from "http";
+import { Server } from "socket.io";
+import mongoose from "mongoose";
+
+import cloudinaryroute from "./routes/cloudinaryroute.js";
+import productroute from "./routes/productroute.js";
+import orderroute from "./routes/orderroute.js";
+import contactRoute from "./routes/contactRoute.js";
+import authRoute from "./routes/authRoute.js";
+
+
+dotenv.config();
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+app.use("/api/orders", orderroute);
+app.use("/api/contact", contactRoute);
+app.use("/api/auth", authRoute);
+
+
+// Connect MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("Mongo DB Connected"))
+    .catch(err => console.error("Mongo Error:", err));
+
+// Cloudinary config
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_SECRET_KEY
+});
+
+// Socket.IO Setup
+const server = http.createServer(app);
+const io = new Server(server, {
+    // cors: { origin: "" }
+    cors: { origin: "https://cart-india-e-commerce-website.vercel.app/" }
+});
+
+app.set("io", io);
+
+// Socket events
+io.on("connection", (socket) => {
+    console.log("Client Connected:", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("Client Disconnected:", socket.id);
+    });
+});
+
+// Routes
+app.use("/api/products/upload", cloudinaryroute); // <-- put this first
+app.use("/api/products", productroute);           // <-- then product routes
+
+
+// Start Server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+    console.log("Server running on port:", PORT);
+});
+</file>
+
+</files>
 </file>
 
 <file path="backend/routes/authRoute.js">
@@ -1937,7 +2547,7 @@ cloudinary.config({
 const server = http.createServer(app);
 const io = new Server(server, {
     // cors: { origin: "" }
-    cors: { origin: "https://cart-india-e-commerce-website.vercel.app/" }
+    cors: { origin: "https://cart-india-e-commerce-website.vercel.app" }
 });
 
 app.set("io", io);
