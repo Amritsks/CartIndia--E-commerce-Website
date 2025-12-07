@@ -38,6 +38,7 @@ cloudinary.config({
 // Socket.IO Setup
 const server = http.createServer(app);
 const io = new Server(server, {
+    // cors: { origin: "" }
     cors: { origin: "https://cart-india-e-commerce-website.vercel.app/" }
 });
 
