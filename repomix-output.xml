@@ -994,50 +994,6 @@ export function CartProvider({ children }) {
 }
 </file>
 
-<file path="frontend/src/context/SocketContext.jsx">
-import { useState, useEffect, createContext } from "react";
-import { io } from "socket.io-client";
-import axios from "axios";
-
-export const SocketContext = createContext();
-
-export function SocketProvider({ children }) {
-    
-    const [socket] = useState(() =>
-        io("http://localhost:5000", { transports: ["polling", "websocket"] })
-    );
-
-    const [products, setProducts] = useState([]);
-
-    useEffect(() => {
-
-        // Fetch products from backend (correctly pull 'products' array)
-        axios.get("http://localhost:5000/api/products")
-            .then((res) => {
-                setProducts(res.data); // because backend returns array directly   // FIXED
-            })
-            .catch((err) => {
-                console.error("Fetch products error:", err);
-            });
-
-        // Listen for real-time updates
-        socket.on("newProduct", (newProduct) => {
-            setProducts((prev) => [newProduct, ...prev]);
-        });
-
-        return () => {
-            socket.off("newProduct");
-        };
-    }, [socket]); // ADD socket here
-
-    return (
-        <SocketContext.Provider value={{ socket, products, setProducts }}>
-            {children}
-        </SocketContext.Provider>
-    );
-}
-</file>
-
 <file path="frontend/src/index.css">
 @tailwind base;
 @tailwind components;
@@ -1876,6 +1832,69 @@ backend/.env
 frontend/.env
 </file>
 
+<file path="frontend/src/context/SocketContext.jsx">
+import { useState, useEffect, createContext } from "react";
+import { io } from "socket.io-client";
+import axios from "axios";
+import.meta.env.VITE_BACKEND_URL
+
+
+export const SocketContext = createContext();
+
+export function SocketProvider({ children }) {
+    
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+    const [socket] = useState(() =>
+    io(BACKEND_URL, { transports: ["polling", "websocket"] })
+    );
+
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+    axios.get(`${BACKEND_URL}/api/products`)
+        .then((res) => setProducts(res.data))
+        .catch((err) => console.error("Fetch products error:", err));
+
+    socket.on("newProduct", (newProduct) => {
+        setProducts((prev) => [newProduct, ...prev]);
+    });
+
+    return () => socket.off("newProduct");
+}, [socket]); // ADD socket here
+
+    return (
+        <SocketContext.Provider value={{ socket, products, setProducts }}>
+            {children}
+        </SocketContext.Provider>
+    );
+}
+</file>
+
+<file path="backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "Server.js",
+  "scripts": {
+    "start": "node Server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "2.2.1",
+    "socket.io": "^4.8.1",
+    "mongoose": "^8.5.1"
+  }
+}
+</file>
+
 <file path="backend/Server.js">
 import express from "express";
 import dotenv from "dotenv";
@@ -1942,30 +1961,6 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log("Server running on port:", PORT);
 });
-</file>
-
-<file path="backend/package.json">
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "Server.js",
-  "scripts": {
-    "start": "node Server.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.8.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "2.2.1",
-    "socket.io": "^4.8.1",
-    "mongoose": "^8.5.1"
-  }
-}
 </file>
 
 </files>
