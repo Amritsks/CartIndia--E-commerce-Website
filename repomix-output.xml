@@ -40,7 +40,7 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-backend/.env
+.gitignore
 backend/cloudinary.js
 backend/middleware/authMiddleware.js
 backend/models/contactModel.js
@@ -89,14 +89,8 @@ package.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="backend/.env">
-Port = 5000
-CLOUDINARY_CLOUD_NAME=dejhyg29k
-CLOUDINARY_API_KEY=952559827945896
-CLOUDINARY_SECRET_KEY=2luczPKiQgu1jAtt0jYgl1QZQlg
-MONGO_URI=mongodb://localhost:27017/product
-JWT_SECRET=modifiedpassword
-JWT_EXPIRES_IN=30d
+<file path=".gitignore">
+backend/.env
 </file>
 
 <file path="backend/cloudinary.js">
@@ -261,29 +255,6 @@ userSchema.methods.matchPassword = async function(plain) {
 // safe model export pattern
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
-</file>
-
-<file path="backend/package.json">
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "node Server.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.8.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "2.2.1",
-    "socket.io": "^4.8.1"
-  }
-}
 </file>
 
 <file path="backend/routes/authRoute.js">
@@ -1972,6 +1943,29 @@ export default defineConfig({
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
+</file>
+
+<file path="backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node Server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "2.2.1",
+    "socket.io": "^4.8.1"
   }
 }
 </file>
