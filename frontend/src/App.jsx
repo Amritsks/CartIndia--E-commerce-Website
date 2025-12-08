@@ -15,9 +15,14 @@ function App() {
   return (
     <BrowserRouter>
       <Navbar />
-      <Routes>
 
-        {/* Protected — user must be logged in */}
+      <Routes>
+        
+        {/* PUBLIC ROUTES */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* PROTECTED ROUTES */}
         <Route path="/" element={
           <ProtectedRoute>
             <Dashboard />
@@ -48,18 +53,6 @@ function App() {
           </ProtectedRoute>
         } />
 
-        <Route path="/login" element={
-          <ProtectedRoute>
-            <Login />
-          </ProtectedRoute>
-        } />
-
-        <Route path="/signup" element={
-          <ProtectedRoute>
-            <Signup />
-          </ProtectedRoute>
-        } />
-
         <Route path="/contact" element={
           <ProtectedRoute>
             <Contact />
@@ -67,6 +60,7 @@ function App() {
         } />
 
       </Routes>
+
     </BrowserRouter>
   );
 }
