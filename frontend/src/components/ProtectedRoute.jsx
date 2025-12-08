@@ -3,7 +3,11 @@ import { AuthContext } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
 
 function ProtectedRoute({ children }) {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return <div className="pt-24 text-center">Loading...</div>;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;

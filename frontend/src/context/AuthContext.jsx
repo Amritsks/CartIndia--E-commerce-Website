@@ -5,25 +5,26 @@ export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
 
-  const [auth, setAuth] = useState(() => {
-    try {
-      const stored = localStorage.getItem("auth");
-      return stored ? JSON.parse(stored) : { user: null, token: null };
-    } catch {
-      return { user: null, token: null };
-    }
-  });
-
-  // Spread values for convenience
-  const { user, token } = auth;
+  const [auth, setAuth] = useState({ user: null, token: null });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (auth?.token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${auth.token}`;
-    } else {
-      delete axios.defaults.headers.common["Authorization"];
+    try {
+      const stored = localStorage.getItem("auth");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setAuth(parsed);
+
+        if (parsed.token) {
+          axios.defaults.headers.common["Authorization"] = `Bearer ${parsed.token}`;
+        }
+      }
+    } catch (err) {
+      console.error("AuthContext load error:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [auth]);
+  }, []);
 
   const saveAuth = (tokenValue, userObj) => {
     const newAuth = { token: tokenValue, user: userObj };
@@ -39,7 +40,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, saveAuth, logout }}>
+    <AuthContext.Provider value={{ user: auth.user, token: auth.token, saveAuth, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
