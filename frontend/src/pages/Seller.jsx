@@ -50,6 +50,7 @@ function Seller()
     onSubmit={handleupload}
     className="bg-gradient-to-r from-slate-400 to-red-200 text-slate-700 flex flex-col gap-4 text-lg w-full max-w-lg p-6 rounded-md shadow-lg"
   >
+    <h2>Upload Products Here 👇.</h2>
     <input
       type="file"
       onChange={(e) => setfile(e.target.files[0])}
